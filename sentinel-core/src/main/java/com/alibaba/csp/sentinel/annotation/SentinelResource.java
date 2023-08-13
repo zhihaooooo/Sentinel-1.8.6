@@ -16,6 +16,7 @@
 package com.alibaba.csp.sentinel.annotation;
 
 import com.alibaba.csp.sentinel.EntryType;
+import com.alibaba.csp.sentinel.ResourceTypeConstants;
 
 import java.lang.annotation.*;
 
@@ -42,7 +43,7 @@ public @interface SentinelResource {
     EntryType entryType() default EntryType.OUT;
 
     /**
-     * @return the classification (type) of the resource
+     * @return the classification (type) of the resource, 0 by default, defined in class {@link ResourceTypeConstants}
      * @since 1.7.0
      */
     int resourceType() default 0;

@@ -32,7 +32,8 @@ public class Env {
     public static final Sph sph = new CtSph();
 
     /**
-     * 只执行一次，按照 order 执行所有 initFuncs.init() 方法的实现
+     * Only execute once,
+     * All implementation schemes for the init method of interface A running sequentially through the spi mechanism.
      */
     static {
         // If init fails, the process will exit.

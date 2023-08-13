@@ -115,16 +115,15 @@ public class CtSph implements Sph {
     }
 
     /**
-     * 1、给资源构建一个全局唯一的 ProcessorSlotChain（本地缓存中没有才创建）<br/>
-     * 2、为资源创建 CtEntry，并将 CtEntry 赋值给当前调用链上下文的 curEntry 字段 <br/>
-     * 3、调用 ProcessorSlotChain 的 entry()，完成一次 ProcessorSlotChain 单向链表的 entry 方法调用 <br/>
-     * 4、方法返回一个 CtEntry，随后
+     * 1. create a ProcessorSlotChain for Resource.<br/>
+     * 2. create a CtEntry for Resource.<br/>
+     * 3. {@link ProcessorSlotChain#entry(Context, ResourceWrapper, Object, int, boolean, Object...)})}<br/>
      *
      * @param resourceWrapper
      * @param count
      * @param prioritized
      * @param args
-     * @return
+     * @return                     CtEntry
      * @throws BlockException
      */
     private Entry entryWithPriority(ResourceWrapper resourceWrapper, int count, boolean prioritized, Object... args) throws BlockException {

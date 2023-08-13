@@ -33,7 +33,14 @@ public final class Constants {
 
     public static final String SENTINEL_VERSION = VersionUtil.getVersion("1.8.6");
 
+    /**
+     * Context 的最大数量
+     */
     public final static int MAX_CONTEXT_NAME_SIZE = 2000;
+
+    /**
+     * ProcessorSlotChain 的最大数量
+     */
     public final static int MAX_SLOT_CHAIN_SIZE = 6000;
 
     public final static String ROOT_ID = "machine-root";
@@ -56,6 +63,7 @@ public final class Constants {
 
     /**
      * Global ROOT statistic node that represents the universal parent node.
+     * 调用树根节点（ROOT）是调用链上的非资源节点
      */
     public final static DefaultNode ROOT = new EntranceNode(new StringResourceWrapper(ROOT_ID, EntryType.IN),
         new ClusterNode(ROOT_ID, ResourceTypeConstants.COMMON));

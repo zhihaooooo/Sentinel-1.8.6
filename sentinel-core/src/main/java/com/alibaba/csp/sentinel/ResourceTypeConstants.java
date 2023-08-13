@@ -22,27 +22,27 @@ package com.alibaba.csp.sentinel;
 public final class ResourceTypeConstants {
 
     /**
-     * 默认，可以是一个接口、一个方法、一段代码
+     * By default, it can be an interface, a method, or a piece of code
      */
     public static final int COMMON = 0;
 
     /**
-     * WEB 应用的接口
+     * Interface for WEB applications
      */
     public static final int COMMON_WEB = 1;
 
     /**
-     * RPC 接口
+     * RPC interface
      */
     public static final int COMMON_RPC = 2;
 
     /**
-     * GateWay 网关接口
+     * GateWay interface
      */
     public static final int COMMON_API_GATEWAY = 3;
 
     /**
-     * 数据库 SQL 操作
+     * Database SQL Operations
      */
     public static final int COMMON_DB_SQL = 4;
 

@@ -27,6 +27,9 @@ import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
 import com.alibaba.csp.sentinel.util.function.BiConsumer;
 
 /**
+ * CtEntry 是 Entry 的直接子类 <br/>
+ * CtEntry 用于维护父子 Entry 的关系，每次调用 SphU 类的 entry 方法都会创建一个 CtEntry 实例 <br/>
+ *
  * Linked entry within current context.
  *
  * @author jialiang.linjl
@@ -34,11 +37,26 @@ import com.alibaba.csp.sentinel.util.function.BiConsumer;
  */
 class CtEntry extends Entry {
 
+    /**
+     * 当前的 Entry 指向的父 Entry
+     */
     protected Entry parent = null;
+
+    /**
+     * 当前的 Entry 指向的下一个 Entry
+     */
     protected Entry child = null;
 
+    /**
+     * 当前资源的 ProcessorSlotChain 实例，Sentinel 会为每个资源创建且仅创建一个 ProcessorSlotChain 实例
+     */
     protected ProcessorSlot<Object> chain;
+
+    /**
+     * 调用链上的 Context 实例
+     */
     protected Context context;
+
     protected LinkedList<BiConsumer<Context, Entry>> exitHandlers;
 
     CtEntry(ResourceWrapper resourceWrapper, ProcessorSlot<Object> chain, Context context) {

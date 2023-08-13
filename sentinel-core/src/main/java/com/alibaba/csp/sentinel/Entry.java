@@ -24,23 +24,20 @@ import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
 import com.alibaba.csp.sentinel.context.Context;
 
 /**
- * 在调用链上，一个资源对应一个 Entry 实例。<br/>
- * 1、每次调用 {@link SphU}#entry() 将会返回一个 Entry 实例。<br/>
- * 2、Entry 实例维护了当前调用的信息。<br/>
- * 3、资源在当前 Context 实例的统计，，，，<br/>
- * 4、指定来源的统计，，，<br/>
+ * When:<br/>
  *
- * Each {@link SphU}#entry() will return an {@link Entry}. This class holds information of current invocation:<br/>
+ * Each {@link SphU}#entry() will return an {@link Entry}.
  *
- * <ul>
- * <li>createTime, the create time of this entry, using for rt statistics.</li>
- * <li>current {@link Node}, that is statistics of the resource in current context.</li>
- * <li>origin {@link Node}, that is statistics for the specific origin. Usually the
- * origin could be the Service Consumer's app name, see
- * {@link ContextUtil#enter(String name, String origin)} </li>
- * <li>{@link ResourceWrapper}, that is resource name.</li>
+ *
  * <br/>
- * </ul>
+ * What:<br/>
+ *
+ * This class holds information of current invocation:<br/><ul>
+ * <li>First point, createTime, the create time of this entry, using for rt statistics.</li>
+ * <li>Second point, current {@link Node}, DefaultNode, that is statistics of the resource in current context.</li>
+ * <li>Third point, origin {@link Node}, StatisticNode, that is statistics for the specific origin. Usually the origin could be the Service Consumer's app name,
+ *                  see {@link ContextUtil#enter(String name, String origin)} </li>
+ * <li>Fourth point, {@link ResourceWrapper}, that is resource name.</li><br/></ul>
  *
  * <p>
  * A invocation tree will be created if we invoke SphU#entry() multi times in the same {@link Context},
@@ -61,33 +58,17 @@ public abstract class Entry implements AutoCloseable {
 
     private static final Object[] OBJECTS0 = new Object[0];
 
-    /**
-     * Entry 实例的创建时间，用来统计 RT
-     */
     private final long createTimestamp;
 
-    /**
-     *
-     */
     private long completeTimestamp;
 
-    /**
-     * 当前资源的 DefaultNode 实例
-     */
     private Node curNode;
 
-    /**
-     * 资源相对于当前调用来源的 StatisticNode
-     * {@link Node} of the specific origin, Usually the origin is the Service Consumer.
-     */
     private Node originNode;
 
     private Throwable error;
     private BlockException blockError;
 
-    /**
-     * 资源实例
-     */
     protected final ResourceWrapper resourceWrapper;
 
     public Entry(ResourceWrapper resourceWrapper) {

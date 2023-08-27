@@ -25,6 +25,8 @@ import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.alibaba.csp.sentinel.util.AssertUtil;
 
 /**
+ * ClusterNode 统计每个资源的全局指标数据，不区分调用入口
+ *
  * <p>
  * This class stores summary runtime statistics of the resource, including rt, thread count, qps
  * and so on. Same resource shares the same {@link ClusterNode} globally, no matter in which
@@ -44,7 +46,9 @@ import com.alibaba.csp.sentinel.util.AssertUtil;
  */
 public class ClusterNode extends StatisticNode {
 
+    // 资源名称
     private final String name;
+    // 资源类型
     private final int resourceType;
 
     public ClusterNode(String name) {
@@ -58,6 +62,8 @@ public class ClusterNode extends StatisticNode {
     }
 
     /**
+     * 应用程序运行的时间越长，映射就越稳定。
+     * 所以我们在这里并没有使用并发 map，而是使用了一个锁，因为这个锁只会发生在最开始的时候，map 将一直保持锁
      * <p>The origin map holds the pair: (origin, originNode) for one specific resource.</p>
      * <p>
      * The longer the application runs, the more stable this mapping will become.
@@ -69,27 +75,12 @@ public class ClusterNode extends StatisticNode {
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    /**
-     * Get resource name of the resource node.
-     *
-     * @return resource name
-     * @since 1.7.0
-     */
-    public String getName() {
-        return name;
-    }
+
 
     /**
-     * Get classification (type) of the resource.
+     * 如果上游服务调用当前服务的接口将 origin 字段传递过来，则 ClusterBuilderSlot 就会为 ClusterNode 实例创建一个 origin 和 StatisticNode 的映射。
      *
-     * @return resource type
-     * @since 1.7.0
-     */
-    public int getResourceType() {
-        return resourceType;
-    }
-
-    /**
+     *
      * <p>Get {@link Node} of the specific origin. Usually the origin is the Service Consumer's app name.</p>
      * <p>If the origin node for given origin is absent, then a new {@link StatisticNode}
      * for the origin will be created and returned.</p>
@@ -123,4 +114,13 @@ public class ClusterNode extends StatisticNode {
         return originCountMap;
     }
 
+
+
+    public String getName() {
+        return name;
+    }
+
+    public int getResourceType() {
+        return resourceType;
+    }
 }

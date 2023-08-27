@@ -22,10 +22,12 @@ package com.alibaba.csp.sentinel.node;
 public interface OccupySupport {
 
     /**
+     * 尝试占用下一个时间窗口的令牌，如果占用成功，则返回一个小于 OccupyTimeoutProperty.occupyTimeout 的值
      * Try to occupy latter time windows' tokens. If occupy success, a value less than
      * {@code occupyTimeout} in {@link OccupyTimeoutProperty} will be return.
      *
      * <p>
+     * 每次占用下一个时间窗口的令牌，当前的线程都要休眠一段时间
      * Each time we occupy tokens of the future window, current thread should sleep for the
      * corresponding time for smoothing QPS. We can't occupy tokens of the future with unlimited,
      * the sleep time limit is {@code occupyTimeout} in {@link OccupyTimeoutProperty}.

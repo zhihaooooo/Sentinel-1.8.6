@@ -25,28 +25,18 @@ import com.alibaba.csp.sentinel.slots.nodeselector.NodeSelectorSlot;
 
 /**
  * This class holds metadata of current invocation:<br/>
- *
+ * <p>1、本类中持有当前调用的部分元数据：
  * <ul>
- * <li>the {@link EntranceNode}: the root of the current invocation
- * tree.</li>
- * <li>the current {@link Entry}: the current invocation point.</li>
- * <li>the current {@link Node}: the statistics related to the
- * {@link Entry}.</li>
- * <li>the origin: The origin is useful when we want to control different
- * invoker/consumer separately. Usually the origin could be the Service Consumer's app name
- * or origin IP. </li>
+ * <li>{@link Context#entranceNode}，EntranceNode 类型，调用树的 root。</li>
+ * <li>{@link Context#curEntry}，当前 {@link Entry}。</li>
+ * <li>{@link Context#origin}，来源。</li>
  * </ul>
- * <p>
- * Each {@link SphU}#entry() or {@link SphO}#entry() should be in a {@link Context},
- * if we don't invoke {@link ContextUtil}#enter() explicitly, DEFAULT context will be used.
  * </p>
- * <p>
- * A invocation tree will be created if we invoke {@link SphU}#entry() multi times in
- * the same context.
- * </p>
- * <p>
- * Same resource in different context will count separately, see {@link NodeSelectorSlot}.
- * </p>
+ *
+ *
+ * <p>2、同一个资源在不同的 context 中的 统计结果是 分开计算的</p>
+ * <p>3、在同一个 context 中多次调用 SphU#entry() 将会生成多个 Entry， 这些 Entry 的父子关系都在调用树上维护，
+ * context 总是持有当前 Entry，所以每次调用 {@link Entry#exit()}，都会进而调用 {@link Context#setCurEntry(Entry)} 更新 context 持有的当前 Entry</p>
  *
  * @author jialiang.linjl
  * @author leyou(lihao)
@@ -56,24 +46,14 @@ import com.alibaba.csp.sentinel.slots.nodeselector.NodeSelectorSlot;
  */
 public class Context {
 
-    /**
-     * Context name.
-     */
+    /** Context 名称，实际上这个名称和 {@link Context#entranceNode} 的资源名称是一样的。*/
     private final String name;
 
-    /**
-     * The entrance node of current invocation tree.
-     */
+    /** 当前调用树的入口节点 */
     private DefaultNode entranceNode;
 
-    /**
-     * Current processing entry.
-     */
     private Entry curEntry;
 
-    /**
-     * The origin of this context (usually indicate different invokers, e.g. service consumer name or origin IP).
-     */
     private String origin = "";
 
     private final boolean async;

@@ -16,7 +16,7 @@
 package com.alibaba.csp.sentinel;
 
 /**
- * Represents order mismatch of resource entry and resource exit (pair mismatch).
+ * 资源入口和资源出口的顺序不匹配（或者说不是同一个资源），抛出 {@link ErrorEntryFreeException}
  *
  * @author qinan.qn
  */

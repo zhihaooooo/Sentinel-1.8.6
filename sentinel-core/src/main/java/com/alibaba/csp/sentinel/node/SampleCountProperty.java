@@ -30,6 +30,9 @@ public class SampleCountProperty {
 
     /**
      * <p>
+     * 统计每秒的存储 bucket 的数量。这个变量决定了 QPS 计算的灵敏度。
+     * 请通过 {@link #updateSampleCount(int)} 修改此值，否则不生效。
+     * 注意此值一定要可以被 1000 整除
      * Statistic buckets count per second. This variable determines sensitivity of the QPS calculation.
      * DO NOT MODIFY this value directly, use {@link #updateSampleCount(int)}, otherwise the modification will not
      * take effect.
@@ -50,10 +53,7 @@ public class SampleCountProperty {
     }
 
     /**
-     * Update the {@link #SAMPLE_COUNT}. All {@link ClusterNode}s will be reset if newSampleCount
-     * is different from {@link #SAMPLE_COUNT}.
-     *
-     * @param newSampleCount New sample count to set. This value must be divisor of 1000.
+     * 更新了 {@link #SAMPLE_COUNT}，如果新旧值不一致，所有的 {@link ClusterNode} 将被重构，反之不会，
      */
     public static void updateSampleCount(int newSampleCount) {
         if (newSampleCount != SAMPLE_COUNT) {

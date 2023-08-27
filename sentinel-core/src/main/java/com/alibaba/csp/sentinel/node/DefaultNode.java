@@ -26,33 +26,21 @@ import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
 import com.alibaba.csp.sentinel.slots.nodeselector.NodeSelectorSlot;
 
 /**
- * <p>
- * A {@link Node} used to hold statistics for specific resource name in the specific context.
- * Each distinct resource in each distinct {@link Context} will corresponding to a {@link DefaultNode}.
- * </p>
- * <p>
- * This class may have a list of sub {@link DefaultNode}s. Child nodes will be created when
- * calling {@link SphU}#entry() or {@link SphO}@entry() multiple times in the same {@link Context}.
- * </p>
+ * <p>1、调用树上的资源节点类型都是 DefaultNode </p>
+ * <p>2、DefaultNode 用来存储 指定资源 在 指定的 context 的指标统计结果，这样做的目的是，实现可按不同调用链入口对资源采取不同的流量控制策略</p>
+ * <p>3、在同一个 context 调用多次 {@link SphU}#entry() 或 {@link SphO}@entry() 将会生成多个 DefaultNode，多个子 Node 将被放到 {@link DefaultNode#childList}</p>
  *
  * @author qinan.qn
  * @see NodeSelectorSlot
  */
 public class DefaultNode extends StatisticNode {
 
-    /**
-     * The resource associated with the node.
-     */
+    // todo 资源 和 DefaultNode 的关系 ？？？ 同一个 context 内 一个资源被访问多次，只会有一个 DefaultNode
     private ResourceWrapper id;
 
-    /**
-     * The list of all child nodes.
-     */
     private volatile Set<Node> childList = new HashSet<>();
 
-    /**
-     * Associated cluster node.
-     */
+    // todo 委托模式：ClusterNode 被 ClusterBuilderSlot 委托给 DefaultNode 统计指标数据
     private ClusterNode clusterNode;
 
     public DefaultNode(ResourceWrapper id, ClusterNode clusterNode) {
@@ -60,23 +48,9 @@ public class DefaultNode extends StatisticNode {
         this.clusterNode = clusterNode;
     }
 
-    public ResourceWrapper getId() {
-        return id;
-    }
 
-    public ClusterNode getClusterNode() {
-        return clusterNode;
-    }
 
-    public void setClusterNode(ClusterNode clusterNode) {
-        this.clusterNode = clusterNode;
-    }
-
-    /**
-     * Add child node to current node.
-     *
-     * @param node valid child node
-     */
+    //
     public void addChild(Node node) {
         if (node == null) {
             RecordLog.warn("Trying to add null child to node <{}>, ignored", id.getName());
@@ -102,9 +76,6 @@ public class DefaultNode extends StatisticNode {
         this.childList = new HashSet<>();
     }
 
-    public Set<Node> getChildList() {
-        return childList;
-    }
 
     @Override
     public void increaseBlockQps(int count) {
@@ -146,6 +117,9 @@ public class DefaultNode extends StatisticNode {
         visitTree(0, this);
     }
 
+    /**
+     * 查看调用树
+     */
     private void visitTree(int level, DefaultNode node) {
         for (int i = 0; i < level; ++i) {
             System.out.print("-");
@@ -166,5 +140,25 @@ public class DefaultNode extends StatisticNode {
             visitTree(level + 1, dn);
         }
     }
+
+
+
+    public ResourceWrapper getId() {
+        return id;
+    }
+
+    public ClusterNode getClusterNode() {
+        return clusterNode;
+    }
+
+    // todo DefaultNode 的构造函数中已经定义了 ClusterNode，这里又开了个口子 ？？？
+    public void setClusterNode(ClusterNode clusterNode) {
+        this.clusterNode = clusterNode;
+    }
+
+    public Set<Node> getChildList() {
+        return childList;
+    }
+
 
 }

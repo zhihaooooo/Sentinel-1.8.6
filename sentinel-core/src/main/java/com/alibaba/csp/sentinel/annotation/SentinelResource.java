@@ -21,7 +21,7 @@ import com.alibaba.csp.sentinel.ResourceTypeConstants;
 import java.lang.annotation.*;
 
 /**
- * The annotation indicates a definition of Sentinel resource.
+ * 定义资源的注解。
  *
  * @author Eric Zhao
  * @author zhaoyuguang
@@ -32,25 +32,16 @@ import java.lang.annotation.*;
 @Inherited
 public @interface SentinelResource {
 
-    /**
-     * @return name of the Sentinel resource
-     */
+    // 资源名称
     String value() default "";
 
-    /**
-     * @return the entry type (inbound or outbound), outbound by default
-     */
+    // 资源调用类型，入口资源或者出口资源
     EntryType entryType() default EntryType.OUT;
 
-    /**
-     * @return the classification (type) of the resource, 0 by default, defined in class {@link ResourceTypeConstants}
-     * @since 1.7.0
-     */
+    /** 资源分类，详见 {@link ResourceTypeConstants} */
     int resourceType() default 0;
 
-    /**
-     * @return name of the block exception function, empty by default
-     */
+    // 资源 的请求被 block 时的处理逻辑
     String blockHandler() default "";
 
     /**

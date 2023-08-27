@@ -114,11 +114,7 @@ public final class SystemRuleManager {
         }
     }
 
-    /**
-     * Load {@link SystemRule}s, former rules will be replaced.
-     *
-     * @param rules new rules to load.
-     */
+    /** Load {@link SystemRule}s, 以前的规则将会被替换。*/
     public static void loadRules(List<SystemRule> rules) {
         currentProperty.updateValue(rules);
     }

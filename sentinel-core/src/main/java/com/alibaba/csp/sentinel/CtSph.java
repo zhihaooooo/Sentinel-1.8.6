@@ -44,12 +44,8 @@ public class CtSph implements Sph {
 
     private static final Object[] OBJECTS0 = new Object[0];
 
-    /**
-     * Same resource({@link ResourceWrapper#equals(Object)}) will share the same
-     * {@link ProcessorSlotChain}, no matter in which {@link Context}.
-     */
-    private static volatile Map<ResourceWrapper, ProcessorSlotChain> chainMap
-        = new HashMap<ResourceWrapper, ProcessorSlotChain>();
+    /** 资源对象 和 {@link ProcessorSlotChain} 的映射关系，一个资源在全局共享一个 {@link ProcessorSlotChain}。*/
+    private static volatile Map<ResourceWrapper, ProcessorSlotChain> chainMap = new HashMap<ResourceWrapper, ProcessorSlotChain>();
 
     private static final Object LOCK = new Object();
 
@@ -114,28 +110,20 @@ public class CtSph implements Sph {
         return asyncEntryWithPriorityInternal(resourceWrapper, count, false, args);
     }
 
-    /**
-     * 1. create a ProcessorSlotChain for Resource.<br/>
-     * 2. create a CtEntry for Resource.<br/>
-     * 3. {@link ProcessorSlotChain#entry(Context, ResourceWrapper, Object, int, boolean, Object...)})}<br/>
-     *
-     * @param resourceWrapper
-     * @param count
-     * @param prioritized
-     * @param args
-     * @return                     CtEntry
-     * @throws BlockException
-     */
+    /** 核心处理逻辑 */
     private Entry entryWithPriority(ResourceWrapper resourceWrapper, int count, boolean prioritized, Object... args) throws BlockException {
+
+        /**
+         * 1、获取一个 context。
+         *   如果需要创建的话，context 名称使用 {@link Constants#CONTEXT_ DEFAULT_ NAME}。
+         *   如果 context 数量达到了阈值 {@link Constants#MAX_CONTEXT_NAME_SIZE}，则直接获得一个 NullContext。
+         */
         Context context = ContextUtil.getContext();
         if (context instanceof NullContext) {
-            // The {@link NullContext} indicates that the amount of context has exceeded the threshold,
-            // so here init the entry only. No rule checking will be done.
             return new CtEntry(resourceWrapper, null, context);
         }
 
         if (context == null) {
-            // Using default context.
             context = InternalContextUtil.internalEnter(Constants.CONTEXT_DEFAULT_NAME);
         }
 
@@ -144,16 +132,26 @@ public class CtSph implements Sph {
             return new CtEntry(resourceWrapper, null, context);
         }
 
-        ProcessorSlot<Object> chain = lookProcessChain(resourceWrapper);
 
-        /*
-         * Means amount of resources (slot chain) exceeds {@link Constants.MAX_SLOT_CHAIN_SIZE},
-         * so no rule checking will be done.
+        /**
+         * 2、获取一个 ProcessorslotChain。
+         *    如果没有就创建。
+         *    如果 ProcessorslotChain 数量达到阈值 {@link Constants#MAX_SLOT_CHAIN_SIZE}，将不会在创建新的 ProcessorslotChain。也就不会做资源的规则校验了。。
          */
+        ProcessorSlot<Object> chain = lookProcessChain(resourceWrapper);
         if (chain == null) {
             return new CtEntry(resourceWrapper, null, context);
         }
 
+
+        /**
+         * 3、开始按顺序执行 ProcessorSlotChain 中的每个处理器。生成一个 CtEntry。
+         * 正常流程：創建一↑ CtEntry、湯用 ProcessorSlot (ProcessorSlotChain的子美DefauttProcessorSlotChain重号了）的 entry 方法：
+         * 週用 first.transformEntry
+         * -> first.entry -> AbstractLinkedProcessorSlot.fireEntry -->
+         * •。。最终会执行所有 AbstractL inkedProcessorslot 的子类的 entry 方法\
+         * 3. 
+         */
         Entry e = new CtEntry(resourceWrapper, chain, context);
         try {
             chain.entry(context, resourceWrapper, null, count, prioritized, args);

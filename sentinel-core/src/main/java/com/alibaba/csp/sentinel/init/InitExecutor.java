@@ -33,23 +33,25 @@ public final class InitExecutor {
     private static AtomicBoolean initialized = new AtomicBoolean(false);
 
     /**
-     * If one {@link InitFunc} throws an exception, the init process
-     * will immediately be interrupted and the application will exit.
-     *
-     * The initialization will be executed only once.
+     * 1、只执行一次
+     * 2、执行过程中出现异常，应用立即退出
      */
     public static void doInit() {
+        // CAS 保证在 JVM 进程中只会执行一次
         if (!initialized.compareAndSet(false, true)) {
             return;
         }
         try {
+            // 加载 InitFunc 的所有子类，并按照子类上的注解 Spi(order = ) 排序，返回有序集合
             List<InitFunc> initFuncs = SpiLoader.of(InitFunc.class).loadInstanceListSorted();
+            // 按照注解 InitOrder 的声明，对子类排序
             List<OrderWrapper> initList = new ArrayList<OrderWrapper>();
             for (InitFunc initFunc : initFuncs) {
                 RecordLog.info("[InitExecutor] Found init func: {}", initFunc.getClass().getCanonicalName());
                 insertSorted(initList, initFunc);
             }
             for (OrderWrapper w : initList) {
+                // 执行所有子类的 init()
                 w.func.init();
                 RecordLog.info("[InitExecutor] Executing {} with order {}",
                     w.func.getClass().getCanonicalName(), w.order);

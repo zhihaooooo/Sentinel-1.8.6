@@ -18,6 +18,9 @@ package com.alibaba.csp.sentinel.slots.system;
 import com.alibaba.csp.sentinel.slots.block.AbstractRule;
 
 /**
+ * <p>1、System Rule 使入站流量和容量满足要求。这需要将请求的平均RT、QPS、和线程计数考虑在内。而且提供了系统负载的测量，但仅在 Linux 上可用。</p>
+ * <p></p>
+ * <p></p>
  * <p>
  * Sentinel System Rule makes the inbound traffic and capacity meet. It takes
  * average RT, QPS and thread count of requests into account. And it also

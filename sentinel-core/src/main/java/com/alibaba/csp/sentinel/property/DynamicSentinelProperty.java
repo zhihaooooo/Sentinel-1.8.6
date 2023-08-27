@@ -22,6 +22,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 public class DynamicSentinelProperty<T> implements SentinelProperty<T> {
 
+    // 监听器集合
     protected Set<PropertyListener<T>> listeners = new CopyOnWriteArraySet<>();
     private T value = null;
 
@@ -44,6 +45,10 @@ public class DynamicSentinelProperty<T> implements SentinelProperty<T> {
         listeners.remove(listener);
     }
 
+    /**
+     * 更新 flowRules 的记录
+     * 按照事件监听的逻辑来说，这里的事件就是判断新旧值是否一致，如果不一致，则遍历执行所有监听器的 configUpdate 函数
+     */
     @Override
     public boolean updateValue(T newValue) {
         if (isEqual(value, newValue)) {

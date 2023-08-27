@@ -20,6 +20,7 @@ import com.alibaba.csp.sentinel.cluster.client.TokenClientProvider;
 import com.alibaba.csp.sentinel.cluster.server.EmbeddedClusterTokenServer;
 import com.alibaba.csp.sentinel.cluster.server.EmbeddedClusterTokenServerProvider;
 import com.alibaba.csp.sentinel.init.InitExecutor;
+import com.alibaba.csp.sentinel.init.InitFunc;
 import com.alibaba.csp.sentinel.log.RecordLog;
 import com.alibaba.csp.sentinel.property.DynamicSentinelProperty;
 import com.alibaba.csp.sentinel.property.PropertyListener;
@@ -47,6 +48,10 @@ public final class ClusterStateManager {
     private static volatile SentinelProperty<Integer> stateProperty = new DynamicSentinelProperty<Integer>();
     private static final PropertyListener<Integer> PROPERTY_LISTENER = new ClusterStatePropertyListener();
 
+    /**
+     * 通过 SPI 机制调用接口 {@link InitFunc} 的所有实现。
+     *
+     */
     static {
         InitExecutor.doInit();
         stateProperty.addListener(PROPERTY_LISTENER);

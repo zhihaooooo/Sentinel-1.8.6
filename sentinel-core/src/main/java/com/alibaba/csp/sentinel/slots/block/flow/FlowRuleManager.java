@@ -112,11 +112,7 @@ public class FlowRuleManager {
         return rules;
     }
 
-    /**
-     * Load {@link FlowRule}s, former rules will be replaced.
-     *
-     * @param rules new rules to load.
-     */
+    /** 加载 {@link FlowRule}s, 以前的规则将会被替换。*/
     public static void loadRules(List<FlowRule> rules) {
         currentProperty.updateValue(rules);
     }

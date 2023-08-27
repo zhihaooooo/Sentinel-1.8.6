@@ -18,9 +18,7 @@ package com.alibaba.csp.sentinel.context;
 import com.alibaba.csp.sentinel.Constants;
 
 /**
- * If total {@link Context} exceed {@link Constants#MAX_CONTEXT_NAME_SIZE}, a
- * {@link NullContext} will get when invoke {@link ContextUtil}.enter(), means
- * no rules checking will do.
+ * 如果 context 数量达到 {@link Constants#MAX_CONTEXT_NAME_SIZE}，再次创建 context 时将会返回一个 NullContext。也就意味着之后的资源请求并不会被规则校验。
  *
  * @author qinan.qn
  */

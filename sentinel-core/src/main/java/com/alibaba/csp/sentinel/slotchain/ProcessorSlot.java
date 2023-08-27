@@ -18,6 +18,18 @@ package com.alibaba.csp.sentinel.slotchain;
 import com.alibaba.csp.sentinel.context.Context;
 
 /**
+ * 处理器插槽（ProcessorSlot）是 sentinel 提供的插件，资源指标数据的统计、限流、熔断降级、系统自适应保护等都需要通过处理器插槽实现。<br/>
+ * 分为两大类实现方式：<br/>
+ * 实现资源指标数据统计的有 NodeSelectorSlot、ClusterBuilderSlot、StatisticSlot；<br/>
+ * 实现流量控制功能的有 AuthoritySlot、SystemSlot、FlowSlot、DegradeSlot；<br/>
+ *
+ * 处理器插槽可以在处理请求之前和处理请求之后进行各种资源指标数据的统计
+ * 处理器插槽可以在处理请求之前决定是否放行请求并控制请求的实际通过时间
+ * 处理器插槽可以通过抛出异常来拒绝请求
+ * 处理器插槽可以通过将线程休眠来控制请求的实际通过时间
+ *
+ *
+ *
  * A container of some process and ways of notification when the process is finished.
  *
  * @author qinan.qn

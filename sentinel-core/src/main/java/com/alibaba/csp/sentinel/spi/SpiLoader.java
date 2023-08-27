@@ -72,16 +72,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class SpiLoader<S> {
 
-    // Default path for the folder of Provider configuration file
+    // 服务提供者配置文件的默认路径
     private static final String SPI_FILE_PREFIX = "META-INF/services/";
 
-    // Cache the SpiLoader instances, key: classname of Service, value: SpiLoader instance
-    private static final ConcurrentHashMap<String, SpiLoader> SPI_LOADER_MAP = new ConcurrentHashMap<>();
+    // 缓存 SpiLoader 实例
+    private static final ConcurrentHashMap<String/* classname of Service */, SpiLoader/* SpiLoader instance */> SPI_LOADER_MAP = new ConcurrentHashMap<>();
 
-    // Cache the classes of Provider
+    // 缓存 服务提供者类
     private final List<Class<? extends S>> classList = Collections.synchronizedList(new ArrayList<Class<? extends S>>());
 
-    // Cache the sorted classes of Provider
+    // 缓存 服务提供者类（排序）
     private final List<Class<? extends S>> sortedClassList = Collections.synchronizedList(new ArrayList<Class<? extends S>>());
 
     /**
@@ -91,8 +91,8 @@ public final class SpiLoader<S> {
      */
     private final ConcurrentHashMap<String, Class<? extends S>> classMap = new ConcurrentHashMap<>();
 
-    // Cache the singleton instance of Provider, key: classname of Provider, value: Provider instance
-    private final ConcurrentHashMap<String, S> singletonMap = new ConcurrentHashMap<>();
+    // 缓存 服务提供者单例
+    private final ConcurrentHashMap<String/* classname of Provider */, S/* Provider instance */> singletonMap = new ConcurrentHashMap<>();
 
     // Whether this SpiLoader has been loaded, that is, loaded the Provider configuration file
     private final AtomicBoolean loaded = new AtomicBoolean(false);
@@ -100,23 +100,17 @@ public final class SpiLoader<S> {
     // Default provider class
     private Class<? extends S> defaultClass = null;
 
-    // The Service class, must be interface or abstract class
+    // 服务接口类，必须为 接口 或者 抽象类
     private Class<S> service;
 
-    /**
-     * Create SpiLoader instance via Service class
-     * Cached by className, and load from cache first
-     *
-     * @param service Service class
-     * @param <T>     Service type
-     * @return SpiLoader instance
-     */
+    /** 创建 SpiLoader 实例，并缓存到 SPI_LOADER_MAP，key 是 服务接口类，value 是 SpiLoader 实例 */
     public static <T> SpiLoader<T> of(Class<T> service) {
+        // 必须为接口或者抽象类
         AssertUtil.notNull(service, "SPI class cannot be null");
-        AssertUtil.isTrue(service.isInterface() || Modifier.isAbstract(service.getModifiers()),
-                "SPI class[" + service.getName() + "] must be interface or abstract class");
+        AssertUtil.isTrue(service.isInterface() || Modifier.isAbstract(service.getModifiers()), "SPI class[" + service.getName() + "] must be interface or abstract class");
 
         String className = service.getName();
+        // 首先在本地缓存中查找，没有的话再创建。双重检查锁定
         SpiLoader<T> spiLoader = SPI_LOADER_MAP.get(className);
         if (spiLoader == null) {
             synchronized (SpiLoader.class) {
@@ -149,22 +143,14 @@ public final class SpiLoader<S> {
         this.service = service;
     }
 
-    /**
-     * Load all Provider instances of the specified Service
-     *
-     * @return Provider instances list
-     */
+    /** 加载指定服务接口类的所有服务提供者实例 */
     public List<S> loadInstanceList() {
         load();
 
         return createInstanceList(classList);
     }
 
-    /**
-     * Load all Provider instances of the specified Service, sorted by order value in class's {@link Spi} annotation
-     *
-     * @return Sorted Provider instances list
-     */
+    /** 加载指定服务接口类的所有服务提供者实例，并按照实现类的注解 Spi(order = ) 中声明的顺序返回 */
     public List<S> loadInstanceListSorted() {
         load();
 
@@ -307,17 +293,18 @@ public final class SpiLoader<S> {
         loaded.set(false);
     }
 
-    /**
-     * Load the Provider class from Provider configuration file
-     */
+    /** 通过 SPI 机制从配置文件中加载服务提供者类 */
     public void load() {
+        // CAS 保证只会执行一次
         if (!loaded.compareAndSet(false, true)) {
             return;
         }
 
+        // SPI 文件名称
         String fullFileName = SPI_FILE_PREFIX + service.getName();
+        // 初始化 ClassLoader
         ClassLoader classLoader;
-        if (SentinelConfig.shouldUseContextClassloader()) {
+        if (SentinelConfig.shouldUseContextClassloader()) { // 默认返回 false
             classLoader = Thread.currentThread().getContextClassLoader();
         } else {
             classLoader = service.getClassLoader();
@@ -325,6 +312,9 @@ public final class SpiLoader<S> {
         if (classLoader == null) {
             classLoader = ClassLoader.getSystemClassLoader();
         }
+
+        // 从 fullFileName 获取 SPI 的实现类路径集合
+        // todo Enumeration<URL> urls = classLoader.getResources(fullFileName);
         Enumeration<URL> urls = null;
         try {
             urls = classLoader.getResources(fullFileName);
@@ -364,6 +354,7 @@ public final class SpiLoader<S> {
                     }
                     line = line.trim();
 
+                    // 根据类路径获取类的定义
                     Class<S> clazz = null;
                     try {
                         clazz = (Class<S>) Class.forName(line, false, classLoader);
@@ -371,13 +362,16 @@ public final class SpiLoader<S> {
                         fail("class " + line + " not found", e);
                     }
 
+                    // SPI 文件中记录类不是 SPI 定义类的子类
                     if (!service.isAssignableFrom(clazz)) {
                         fail("class " + clazz.getName() + "is not subtype of " + service.getName() + ",SPI configuration file=" + fullFileName);
                     }
 
                     classList.add(clazz);
+                    // SPI 服务提供者类去重（别名）
                     Spi spi = clazz.getAnnotation(Spi.class);
                     String aliasName = spi == null || "".equals(spi.value()) ? clazz.getName() : spi.value();
+                    // 别名重复
                     if (classMap.containsKey(aliasName)) {
                         Class<? extends S> existClass = classMap.get(aliasName);
                         fail("Found repeat alias name for " + clazz.getName() + " and "
@@ -385,6 +379,7 @@ public final class SpiLoader<S> {
                     }
                     classMap.put(aliasName, clazz);
 
+                    // SPI 服务提供者类去重（default）
                     if (spi != null && spi.isDefault()) {
                         if (defaultClass != null) {
                             fail("Found more than one default Provider, SPI configuration file=" + fullFileName);

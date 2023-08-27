@@ -31,12 +31,7 @@ import com.alibaba.csp.sentinel.slotchain.StringResourceWrapper;
 import com.alibaba.csp.sentinel.slots.nodeselector.NodeSelectorSlot;
 
 /**
- * Utility class to get or create {@link Context} in current thread.
- *
- * <p>
- * Each {@link SphU}#entry() or {@link SphO}#entry() should be in a {@link Context}.
- * If we don't invoke {@link ContextUtil}#enter() explicitly, DEFAULT context will be used.
- * </p>
+ * 在当前线程 获取 或者 创建 {@link Context}
  *
  * @author jialiang.linjl
  * @author leyou(lihao)
@@ -44,24 +39,24 @@ import com.alibaba.csp.sentinel.slots.nodeselector.NodeSelectorSlot;
  */
 public class ContextUtil {
 
-    /**
-     * Store the context in ThreadLocal for easy access.
-     */
+    // context 被存储在 ThreadLocal，意味着每个线程都有一个唯一的 context，请求和context是一对一的关系，其中都涉及到一个或多个资源。
     private static ThreadLocal<Context> contextHolder = new ThreadLocal<>();
 
-    /**
-     * Holds all {@link EntranceNode}. Each {@link EntranceNode} is associated with a distinct context name.
-     */
+    /** 存储了 context 名称 和 {@link EntranceNode} 的映射关系 */
     private static volatile Map<String, DefaultNode> contextNameNodeMap = new HashMap<>();
 
     private static final ReentrantLock LOCK = new ReentrantLock();
     private static final Context NULL_CONTEXT = new NullContext();
+
+
+
 
     static {
         // Cache the entrance node for default context.
         initDefaultContext();
     }
 
+    /** 初始化 context 名称为 Constants.CONTEXT_DEFAULT_NAME 的 EntranceNode */
     private static void initDefaultContext() {
         String defaultContextName = Constants.CONTEXT_DEFAULT_NAME;
         EntranceNode node = new EntranceNode(new StringResourceWrapper(defaultContextName, EntryType.IN), null);
@@ -81,11 +76,6 @@ public class ContextUtil {
     }
 
     /**
-     * <p>
-     * Enter the invocation context, which marks as the entrance of an invocation chain.
-     * The context is wrapped with {@code ThreadLocal}, meaning that each thread has it's own {@link Context}.
-     * New context will be created if current thread doesn't have one.
-     * </p>
      * <p>
      * A context will be bound with an {@link EntranceNode}, which represents the entrance statistic node
      * of the invocation chain. New {@link EntranceNode} will be created if
@@ -110,23 +100,32 @@ public class ContextUtil {
      * @return The invocation context of the current thread
      */
     public static Context enter(String name, String origin) {
+        // 不允许使用 Constants.CONTEXT_DEFAULT_NAME
         if (Constants.CONTEXT_DEFAULT_NAME.equals(name)) {
-            throw new ContextNameDefineException(
-                "The " + Constants.CONTEXT_DEFAULT_NAME + " can't be permit to defined!");
+            throw new ContextNameDefineException("The " + Constants.CONTEXT_DEFAULT_NAME + " can't be permit to defined!");
         }
         return trueEnter(name, origin);
     }
 
+    /**
+     * <p>1、创建 context 实例</p>
+     * <p>2、为调用树创建入口节点 EntranceNode，作为调用树 root 节点的子节点</p>
+     */
     protected static Context trueEnter(String name, String origin) {
+        // 从 threadLocal 获取 context
         Context context = contextHolder.get();
         if (context == null) {
+            // threadLocal 中不存在 context，则需要考虑创建 context。而创建 context 前首先需要创建 入口节点 EntranceNode。
             Map<String, DefaultNode> localCacheNameMap = contextNameNodeMap;
             DefaultNode node = localCacheNameMap.get(name);
+            // 缓存中不存在 入口节点 EntranceNode
             if (node == null) {
+                // 达到了 context 的数量阈值，创建 NullContext
                 if (localCacheNameMap.size() > Constants.MAX_CONTEXT_NAME_SIZE) {
                     setNullContext();
                     return NULL_CONTEXT;
                 } else {
+                    // 创建 入口节点 EntranceNode
                     LOCK.lock();
                     try {
                         node = contextNameNodeMap.get(name);
@@ -137,6 +136,7 @@ public class ContextUtil {
                             } else {
                                 node = new EntranceNode(new StringResourceWrapper(name, EntryType.IN), null);
                                 // Add entrance node.
+                                // 将入口节点 EntranceNode 添加到 调用树 的 root 节点的子节点集合中
                                 Constants.ROOT.addChild(node);
 
                                 Map<String, DefaultNode> newMap = new HashMap<>(contextNameNodeMap.size() + 1);
@@ -150,6 +150,7 @@ public class ContextUtil {
                     }
                 }
             }
+            // 创建 context，context 名称 和 入口节点 EntranceNode 的资源名称一致。
             context = new Context(node, name);
             context.setOrigin(origin);
             contextHolder.set(context);

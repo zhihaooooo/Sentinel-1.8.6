@@ -33,6 +33,8 @@ import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
 
 /**
+ * <p>实时统计资源指标数据的处理器插槽，他会先调用后续的 ProcessorSlot 的entry 方法判断是否放行请求，再根据结果执行响应的资源指标数据统计下列信息</p>
+ *
  * <p>
  * A processor slot that dedicates to real time statistics.
  * When entering this slot, we need to separately count the following

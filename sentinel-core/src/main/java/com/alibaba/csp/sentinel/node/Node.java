@@ -24,7 +24,8 @@ import com.alibaba.csp.sentinel.slots.statistic.metric.DebugSupport;
 import com.alibaba.csp.sentinel.util.function.Predicate;
 
 /**
- * Holds real-time statistics for resources.
+ * <p>1、Node 接口用于定义统计资源的实时指标数据的方法，可以对外屏蔽滑动窗口的存在。</p>
+ * <p>2、Node 接口的不同实现类被用于从不同的维度来统计资源指标数据</p>
  *
  * @author qinan.qn
  * @author leyou

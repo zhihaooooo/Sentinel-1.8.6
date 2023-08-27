@@ -27,17 +27,14 @@ import com.alibaba.csp.sentinel.util.TimeUtil;
 import com.alibaba.csp.sentinel.util.function.Predicate;
 
 /**
- * <p>The statistic node keep three kinds of real-time statistics metrics:</p>
+ * <p>1、三种实时统计指标的方式:</p>
  * <ol>
- * <li>metrics in second level ({@code rollingCounterInSecond})</li>
- * <li>metrics in minute level ({@code rollingCounterInMinute})</li>
- * <li>thread count</li>
+ * <li>秒级 ({@code rollingCounterInSecond})</li>
+ * <li>分钟级 ({@code rollingCounterInMinute})</li>
+ * <li>线程数</li>
  * </ol>
  *
- * <p>
- * Sentinel use sliding window to record and count the resource statistics in real-time.
- * The sliding window infrastructure behind the {@link ArrayMetric} is {@code LeapArray}.
- * </p>
+ * <p>2、使用滑动窗口来记录资源实时的指标数据，详见 {@link ArrayMetric}  {@code LeapArray}</p>
  *
  * <p>
  * case 1: When the first request comes in, Sentinel will create a new window bucket of
@@ -90,28 +87,34 @@ import com.alibaba.csp.sentinel.util.function.Predicate;
 public class StatisticNode implements Node {
 
     /**
-     * Holds statistics of the recent {@code INTERVAL} milliseconds. The {@code INTERVAL} is divided into time spans
-     * by given {@code sampleCount}.
+     * 秒级滑动窗口，用于统计实时的指标数据
+     *  The {@code INTERVAL} is divided into time spans by given {@code sampleCount}.
      */
-    private transient volatile Metric rollingCounterInSecond = new ArrayMetric(SampleCountProperty.SAMPLE_COUNT,
-        IntervalProperty.INTERVAL);
+    private transient volatile Metric rollingCounterInSecond = new ArrayMetric(SampleCountProperty.SAMPLE_COUNT, IntervalProperty.INTERVAL);
 
     /**
+     * 分钟级滑动窗口，用于保存近一分钟内的历史指标数据，但是它的数据并不是从秒级滑动窗口来的。
      * Holds statistics of the recent 60 seconds. The windowLengthInMs is deliberately set to 1000 milliseconds,
      * meaning each bucket per second, in this way we can get accurate statistics of each second.
      */
     private transient Metric rollingCounterInMinute = new ArrayMetric(60, 60 * 1000, false);
 
     /**
+     * 并行占用线程计数器，用于统计实时占用的线程数
      * The counter for thread count.
      */
     private LongAdder curThreadNum = new LongAdder();
 
     /**
+     * 最近一次拉取统计结果的时间
      * The last timestamp when metrics were fetched.
      */
     private long lastFetchTime = -1;
 
+    /**
+     * 拉取资源所有有效的指标节点。此操作是线程安全的（单线程操作）
+     * @return
+     */
     @Override
     public Map<Long, MetricNode> metrics() {
         // The fetch operation is thread-safe under a single-thread scheduler pool.
@@ -161,11 +164,17 @@ public class StatisticNode implements Node {
         return rollingCounterInMinute.block();
     }
 
+    /**
+     * 当需要获取当前一秒内被拒绝的请求时，从秒级滑动窗口中获取
+     */
     @Override
     public double blockQps() {
         return rollingCounterInSecond.block() / rollingCounterInSecond.getWindowIntervalInSec();
     }
 
+    /**
+     * 当需要获取前一秒被拒绝的请求数时，从分钟级滑动窗口中国获取
+     */
     @Override
     public double previousBlockQps() {
         return this.rollingCounterInMinute.previousWindowBlock();
@@ -232,6 +241,9 @@ public class StatisticNode implements Node {
         return rollingCounterInSecond.rt() * 1.0 / successCount;
     }
 
+    /**
+     * 当需要获取当前一秒内的最小耗时时，需要从秒级滑动窗口获取
+     */
     @Override
     public double minRt() {
         return rollingCounterInSecond.minRt();
@@ -286,8 +298,11 @@ public class StatisticNode implements Node {
 
     @Override
     public long tryOccupyNext(long currentTime, int acquireCount, double threshold) {
+        // 计算每个 滑动窗口（包括所有的 bucket）内理论上可以放行的请求数
         double maxCount = threshold * IntervalProperty.INTERVAL / 1000;
+
         long currentBorrow = rollingCounterInSecond.waiting();
+        // 已经放行的请求数 >=理论最大请求数，那么允许等待的时间是秒级滑动窗口的一整个窗口的时间
         if (currentBorrow >= maxCount) {
             return OccupyTimeoutProperty.getOccupyTimeout();
         }

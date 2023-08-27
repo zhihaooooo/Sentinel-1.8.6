@@ -25,8 +25,7 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * The universal local configuration center of Sentinel. The config is retrieved from command line arguments
- * and customized properties file by default.
+ * Sentinel 的通用本地配置中心，默认情况下，从命令行参数和自定义属性文件中检索配置。
  *
  * @author leyou
  * @author Eric Zhao
@@ -36,8 +35,6 @@ public final class SentinelConfig {
 
     /**
      * The default application type.
-     *
-     * @since 1.6.0
      */
     public static final int APP_TYPE_COMMON = 0;
 
@@ -71,8 +68,8 @@ public final class SentinelConfig {
 
     static {
         try {
-            initialize();
-            loadProps();
+            initialize(); // 填充 本类中硬编码的配置 到 {@link SentinelConfig#props}
+            loadProps(); // 填充 各种 property 配置 到 {@link SentinelConfig#props}
             resolveAppName();
             resolveAppType();
             RecordLog.info("[SentinelConfig] Application type resolved: {}", appType);
@@ -98,8 +95,17 @@ public final class SentinelConfig {
         }
     }
 
+    /**
+     * 填充配置到 {@link SentinelConfig#props}
+     *
+     * csp.sentinel.charset                   UTF-8
+     * csp.sentinel.metric.file.single.size   1024 * 1024 * 50
+     * csp.sentinel.metric.file.total.count   6
+     * csp.sentinel.flow.cold.factor          3
+     * csp.sentinel.statistic.max.rt          5000
+     * csp.sentinel.metric.flush.interval     1L
+     */
     private static void initialize() {
-        // Init default properties.
         setConfig(CHARSET, DEFAULT_CHARSET);
         setConfig(SINGLE_METRIC_FILE_SIZE, String.valueOf(DEFAULT_SINGLE_METRIC_FILE_SIZE));
         setConfig(TOTAL_METRIC_FILE_COUNT, String.valueOf(DEFAULT_TOTAL_METRIC_FILE_COUNT));
@@ -108,6 +114,9 @@ public final class SentinelConfig {
         setConfig(METRIC_FLUSH_INTERVAL, String.valueOf(DEFAULT_METRIC_FLUSH_INTERVAL));
     }
 
+    /**
+     * todo 如果 SentinelConfigLoader 的 load() 方法没有执行完，那么此时拿到的就是 空的map ？？？
+     */
     private static void loadProps() {
         Properties properties = SentinelConfigLoader.getProperties();
         for (Object key : properties.keySet()) {

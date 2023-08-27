@@ -16,6 +16,9 @@
 package com.alibaba.csp.sentinel.slotchain;
 
 /**
+ * <p>1、Sentinel 会为每个资源创建且仅创建一个 ProcessorSlotChain 实例。</p>
+ * <p>2、Sentinel 按顺序将注册的处理器插槽构造成有序的处理器插槽链表 ProcessorSlotChain</p>
+ *
  * Link all processor slots as a chain.
  *
  * @author qinan.qn

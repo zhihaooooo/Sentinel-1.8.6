@@ -16,7 +16,7 @@
 package com.alibaba.csp.sentinel;
 
 /**
- * An enum marks resource invocation direction.
+ * 定义资源被调用的方向。
  *
  * @author jialiang.linjl
  * @author Yanming Zhou

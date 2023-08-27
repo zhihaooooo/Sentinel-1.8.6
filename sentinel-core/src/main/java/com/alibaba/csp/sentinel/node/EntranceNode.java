@@ -21,9 +21,10 @@ import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
 import com.alibaba.csp.sentinel.slots.nodeselector.NodeSelectorSlot;
 
 /**
- * <p>
- * A {@link Node} represents the entrance of the invocation tree.
- * </p>
+ * <p>1、调用树上的非资源节点（入口节点和树root节点）类型都是 EntranceNode </p>
+ * <p>2、一个 context 和 一个 EntranceNode 关联</p>
+ * <p>3、相同的 context 名称 在全局内共享 同一个 EntranceNode 实例</p>
+ *
  * <p>
  * One {@link Context} will related to a {@link EntranceNode},
  * which represents the entrance of the invocation tree. New {@link EntranceNode} will be created if

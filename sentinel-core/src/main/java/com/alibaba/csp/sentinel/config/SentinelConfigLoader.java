@@ -66,6 +66,7 @@ public final class SentinelConfigLoader {
             properties.putAll(p);
         }
 
+        // todo 替换？ 就是为了转换成 String ？？？
         for (Map.Entry<Object, Object> entry : new CopyOnWriteArraySet<>(System.getProperties().entrySet())) {
             String configKey = entry.getKey().toString();
             String newConfigValue = entry.getValue().toString();

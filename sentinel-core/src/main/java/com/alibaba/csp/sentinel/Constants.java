@@ -33,14 +33,10 @@ public final class Constants {
 
     public static final String SENTINEL_VERSION = VersionUtil.getVersion("1.8.6");
 
-    /**
-     * Context 的最大数量
-     */
+    /** Context 数量阈值 */
     public final static int MAX_CONTEXT_NAME_SIZE = 2000;
 
-    /**
-     * ProcessorSlotChain 的最大数量
-     */
+    /** ProcessorSlotChain 数量阈值*/
     public final static int MAX_SLOT_CHAIN_SIZE = 6000;
 
     public final static String ROOT_ID = "machine-root";

@@ -32,11 +32,9 @@ import com.alibaba.csp.sentinel.slots.clusterbuilder.ClusterBuilderSlot;
 public class IntervalProperty {
 
     /**
-     * <p>Interval in milliseconds. This variable determines sensitivity of the QPS calculation.</p>
-     * <p>
-     * DO NOT MODIFY this value directly, use {@link #updateInterval(int)}, otherwise the modification will not
-     * take effect.
-     * </p>
+     * 秒级滑动时间窗口的长度
+     * 1、间隔（单位毫秒），该变量决定 QPS 计算的灵敏度。
+     * 2、通过 {@link #updateInterval(int)} 修改，否则不会生效。
      */
     public static volatile int INTERVAL = RuleConstant.DEFAULT_WINDOW_INTERVAL_MS;
 
@@ -52,10 +50,7 @@ public class IntervalProperty {
     }
 
     /**
-     * Update the {@link #INTERVAL}, All {@link ClusterNode}s will be reset if newInterval is
-     * different from {@link #INTERVAL}
-     *
-     * @param newInterval New interval to set.
+     * 更新了 {@link #INTERVAL}，如果新旧值不一致，所有的 {@link ClusterNode} 将被重构，反之不会，
      */
     public static void updateInterval(int newInterval) {
         if (newInterval != INTERVAL) {

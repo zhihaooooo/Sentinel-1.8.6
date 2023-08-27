@@ -100,11 +100,7 @@ public final class DegradeRuleManager {
         return ruleMap.get(resource);
     }
 
-    /**
-     * Load {@link DegradeRule}s, former rules will be replaced.
-     *
-     * @param rules new rules to load.
-     */
+    /** Load {@link DegradeRule}s, 以前的规则将会被替换。*/
     public static void loadRules(List<DegradeRule> rules) {
         try {
             currentProperty.updateValue(rules);

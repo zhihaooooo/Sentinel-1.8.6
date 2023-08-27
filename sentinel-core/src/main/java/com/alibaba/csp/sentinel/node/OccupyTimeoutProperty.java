@@ -28,10 +28,12 @@ public class OccupyTimeoutProperty {
 
     /**
      * <p>
+     * 最大抢占超时时间，带有优先级的请求可以占用未来时间窗口的令牌
      * Max occupy timeout in milliseconds. Requests with priority can occupy tokens of the future statistic
      * window, and {@code occupyTimeout} limit the max time length that can be occupied.
      * </p>
      * <p>
+     * 超时时间不能大于 {@link IntervalProperty#INTERVAL}，因为 INTERVAL 是秒级滑动窗口的 bucket 时间范围
      * Note that the timeout value should never be greeter than {@link IntervalProperty#INTERVAL}.
      * </p>
      * DO NOT MODIFY this value directly, use {@link #updateTimeout(int)},

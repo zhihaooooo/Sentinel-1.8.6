@@ -24,27 +24,15 @@ import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
 import com.alibaba.csp.sentinel.context.Context;
 
 /**
- * When:<br/>
+ * <p>1、每次调用 {@link SphU}#entry() 将生成一个 {@link Entry}。</p>
  *
- * Each {@link SphU}#entry() will return an {@link Entry}.
- *
- *
- * <br/>
- * What:<br/>
- *
- * This class holds information of current invocation:<br/><ul>
- * <li>First point, createTime, the create time of this entry, using for rt statistics.</li>
- * <li>Second point, current {@link Node}, DefaultNode, that is statistics of the resource in current context.</li>
- * <li>Third point, origin {@link Node}, StatisticNode, that is statistics for the specific origin. Usually the origin could be the Service Consumer's app name,
- *                  see {@link ContextUtil#enter(String name, String origin)} </li>
- * <li>Fourth point, {@link ResourceWrapper}, that is resource name.</li><br/></ul>
- *
- * <p>
- * A invocation tree will be created if we invoke SphU#entry() multi times in the same {@link Context},
- * so parent or child entry may be held by this to form the tree. Since {@link Context} always holds
- * the current entry in the invocation tree, every {@link Entry#exit()} call should modify
- * {@link Context#setCurEntry(Entry)} as parent entry of this.
+ * <p>2、此类持有调用过程中的部分信息：
+ * <li>{@link Entry#createTimestamp}，这个 entry 的创建时间。</li>
+ * <li>{@link Entry#curNode}，DefaultNode 类型，资源在当前 Context 的统计。</li>
+ * <li>{@link Entry#originNode}，StatisticNode类型，来源的统计。</li>
+ * <li>{@link Entry#resourceWrapper}，资源名称</li>
  * </p>
+ *
  *
  * @author qinan.qn
  * @author jialiang.linjl
@@ -80,11 +68,7 @@ public abstract class Entry implements AutoCloseable {
         return resourceWrapper;
     }
 
-    /**
-     * Complete the current resource entry and restore the entry stack in context.
-     *
-     * @throws ErrorEntryFreeException if entry in current context does not match current entry
-     */
+    /** 结束对当前资源的访问并且记录到当前 {@link Context} */
     public void exit() throws ErrorEntryFreeException {
         exit(1, OBJECTS0);
     }

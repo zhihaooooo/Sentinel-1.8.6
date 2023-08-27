@@ -16,14 +16,12 @@
 package com.alibaba.csp.sentinel;
 
 import com.alibaba.csp.sentinel.init.InitExecutor;
+import com.alibaba.csp.sentinel.init.InitFunc;
 
 /**
- * Sentinel Env. This class will trigger all initialization for Sentinel.
+ * <p>1、此类将触发Sentinel的所有初始化</p>
  *
- * <p>
- * NOTE: to prevent deadlocks, other classes' static code block or static field should
- * NEVER refer to this class.
- * </p>
+ * <p>2、NOTE: to prevent deadlocks, other classes' static code block or static field should NEVER refer to this class.</p>
  *
  * @author jialiang.linjl
  */
@@ -32,11 +30,9 @@ public class Env {
     public static final Sph sph = new CtSph();
 
     /**
-     * Only execute once,
-     * All implementation schemes for the init method of interface A running sequentially through the spi mechanism.
+     * 只会执行一次，通过 SPI 机制 加载执行接口 {@link InitFunc} 的所有实现。 如果执行出现异常，JVM进程将退出
      */
     static {
-        // If init fails, the process will exit.
         InitExecutor.doInit();
     }
 

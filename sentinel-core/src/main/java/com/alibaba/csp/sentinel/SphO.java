@@ -28,19 +28,8 @@ import com.alibaba.csp.sentinel.slots.system.SystemRule;
 import com.alibaba.csp.sentinel.slots.system.SystemRuleManager;
 
 /**
- * Conceptually, physical or logical resource that need protection should be
- * surrounded by an entry. The requests to this resource will be blocked if any
- * criteria is met, eg. when any {@link Rule}'s threshold is exceeded. Once blocked,
- * {@link SphO}#entry() will return false.
  *
- * <p>
- * To configure the criteria, we can use <code>XXXRuleManager.loadRules()</code> to add rules. eg.
- * {@link FlowRuleManager#loadRules(List)}, {@link DegradeRuleManager#loadRules(List)},
- * {@link SystemRuleManager#loadRules(List)}.
- * </p>
- *
- * <p>
- * Following code is an example. {@code "abc"} represent a unique name for the
+ * <p>1、demo，{@code "abc"} represent a unique name for the
  * protected resource:
  * </p>
  *
@@ -58,8 +47,6 @@ import com.alibaba.csp.sentinel.slots.system.SystemRuleManager;
  * }
  * </pre>
  *
- * Make sure {@code SphO.entry()} and {@link SphO#exit()} be paired in the same thread,
- * otherwise {@link ErrorEntryFreeException} will be thrown.
  *
  * @author jialiang.linjl
  * @author leyou
@@ -70,113 +57,26 @@ public class SphO {
 
     private static final Object[] OBJECTS0 = new Object[0];
 
-    /**
-     * Record statistics and perform rule checking for the given resource.
-     *
-     * @param name the unique name of the protected resource
-     * @return true if no rule's threshold is exceeded, otherwise return false.
-     */
+
+
+
+
     public static boolean entry(String name) {
         return entry(name, EntryType.OUT, 1, OBJECTS0);
     }
 
-    /**
-     * Checking all {@link Rule}s about the protected method.
-     *
-     * @param method the protected method
-     * @return true if no rule's threshold is exceeded, otherwise return false.
-     */
-    public static boolean entry(Method method) {
-        return entry(method, EntryType.OUT, 1, OBJECTS0);
-    }
-
-    /**
-     * Checking all {@link Rule}s about the protected method.
-     *
-     * @param method     the protected method
-     * @param batchCount the amount of calls within the invocation (e.g. batchCount=2 means request for 2 tokens)
-     * @return true if no rule's threshold is exceeded, otherwise return false.
-     */
-    public static boolean entry(Method method, int batchCount) {
-        return entry(method, EntryType.OUT, batchCount, OBJECTS0);
-    }
-
-    /**
-     * Record statistics and perform rule checking for the given resource.
-     *
-     * @param name       the unique string for the resource
-     * @param batchCount the amount of calls within the invocation (e.g. batchCount=2 means request for 2 tokens)
-     * @return true if no rule's threshold is exceeded, otherwise return false.
-     */
     public static boolean entry(String name, int batchCount) {
         return entry(name, EntryType.OUT, batchCount, OBJECTS0);
     }
 
-    /**
-     * Checking all {@link Rule}s about the protected method.
-     *
-     * @param method the protected method
-     * @param type   the resource is an inbound or an outbound method. This is used
-     *               to mark whether it can be blocked when the system is unstable,
-     *               only inbound traffic could be blocked by {@link SystemRule}
-     * @return true if no rule's threshold is exceeded, otherwise return false.
-     */
-    public static boolean entry(Method method, EntryType type) {
-        return entry(method, type, 1, OBJECTS0);
-    }
-
-    /**
-     * Record statistics and perform rule checking for the given resource.
-     *
-     * @param name the unique name for the protected resource
-     * @param type the resource is an inbound or an outbound method. This is used
-     *             to mark whether it can be blocked when the system is unstable,
-     *             only inbound traffic could be blocked by {@link SystemRule}
-     * @return true if no rule's threshold is exceeded, otherwise return false.
-     */
     public static boolean entry(String name, EntryType type) {
         return entry(name, type, 1, OBJECTS0);
     }
 
-    /**
-     * Checking all {@link Rule}s about the protected method.
-     *
-     * @param method the protected method
-     * @param type   the resource is an inbound or an outbound method. This is used
-     *               to mark whether it can be blocked when the system is unstable,
-     *               only inbound traffic could be blocked by {@link SystemRule}
-     * @param count  the amount of calls within the invocation (e.g. batchCount=2 means request for 2 tokens)
-     * @return true if no rule's threshold is exceeded, otherwise return false.
-     */
-    public static boolean entry(Method method, EntryType type, int count) {
-        return entry(method, type, count, OBJECTS0);
-    }
-
-    /**
-     * Record statistics and perform rule checking for the given resource.
-     *
-     * @param name  the unique name for the protected resource
-     * @param type  the resource is an inbound or an outbound method. This is used
-     *              to mark whether it can be blocked when the system is unstable,
-     *              only inbound traffic could be blocked by {@link SystemRule}
-     * @param count the amount of calls within the invocation (e.g. batchCount=2 means request for 2 tokens)
-     * @return true if no rule's threshold is exceeded, otherwise return false.
-     */
     public static boolean entry(String name, EntryType type, int count) {
         return entry(name, type, count, OBJECTS0);
     }
 
-    /**
-     * Record statistics and perform rule checking for the given resource.
-     *
-     * @param name        the unique name for the protected resource
-     * @param trafficType the traffic type (inbound, outbound or internal). This is used
-     *                    to mark whether it can be blocked when the system is unstable,
-     *                    only inbound traffic could be blocked by {@link SystemRule}
-     * @param batchCount  the amount of calls within the invocation (e.g. batchCount=2 means request for 2 tokens)
-     * @param args        args for parameter flow control or customized slots
-     * @return true if no rule's threshold is exceeded, otherwise return false.
-     */
     public static boolean entry(String name, EntryType trafficType, int batchCount, Object... args) {
         try {
             Env.sph.entry(name, trafficType, batchCount, args);
@@ -189,17 +89,28 @@ public class SphO {
         return true;
     }
 
-    /**
-     * Record statistics and perform rule checking for the given method resource.
-     *
-     * @param method      the protected method
-     * @param trafficType the traffic type (inbound, outbound or internal). This is used
-     *                    to mark whether it can be blocked when the system is unstable,
-     *                    only inbound traffic could be blocked by {@link SystemRule}
-     * @param batchCount  the amount of calls within the invocation (e.g. batchCount=2 means request for 2 tokens)
-     * @param args        args for parameter flow control or customized slots
-     * @return true if no rule's threshold is exceeded, otherwise return false.
-     */
+
+
+
+
+
+
+    public static boolean entry(Method method) {
+        return entry(method, EntryType.OUT, 1, OBJECTS0);
+    }
+
+    public static boolean entry(Method method, int batchCount) {
+        return entry(method, EntryType.OUT, batchCount, OBJECTS0);
+    }
+
+    public static boolean entry(Method method, EntryType type) {
+        return entry(method, type, 1, OBJECTS0);
+    }
+
+    public static boolean entry(Method method, EntryType type, int count) {
+        return entry(method, type, count, OBJECTS0);
+    }
+
     public static boolean entry(Method method, EntryType trafficType, int batchCount, Object... args) {
         try {
             Env.sph.entry(method, trafficType, batchCount, args);
@@ -211,6 +122,10 @@ public class SphO {
         }
         return true;
     }
+
+
+
+
 
     public static void exit(int count, Object... args) {
         ContextUtil.getContext().getCurEntry().exit(count, args);

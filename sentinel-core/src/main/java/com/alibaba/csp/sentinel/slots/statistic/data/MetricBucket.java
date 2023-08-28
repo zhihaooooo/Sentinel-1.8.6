@@ -20,15 +20,22 @@ import com.alibaba.csp.sentinel.slots.statistic.MetricEvent;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
- * Represents metrics data in a period of time span.
+ * 表示一段时间内的指标数据
  *
  * @author jialiang.linjl
  * @author Eric Zhao
  */
 public class MetricBucket {
 
+    /**
+     * 存储各项指标的计数，包括 被放行的请求数、被拒绝的请求数、请求异常总数、请求成功总数、总耗时、未来会被放行的请求数
+     * 枚举类 MetricEvent 的每个指标对应的 ordinal 作为数组的下标，存储的对应的元素
+     */
     private final LongAdder[] counters;
 
+    /**
+     * 记录最小耗时（最小响应时间）
+     */
     private volatile long minRt;
 
     public MetricBucket() {
@@ -40,6 +47,9 @@ public class MetricBucket {
         initMinRt();
     }
 
+    /**
+     * 创建一个新的 MetricBucket，将旧的 MetricBucket 的统计结果填充到新的 MetricBucket 中
+     */
     public MetricBucket reset(MetricBucket bucket) {
         for (MetricEvent event : MetricEvent.values()) {
             counters[event.ordinal()].reset();
@@ -70,6 +80,7 @@ public class MetricBucket {
         return counters[event.ordinal()].sum();
     }
 
+    // MetricEvent 的 ordinal 值 对应 longAdder 数组下标的元素
     public MetricBucket add(MetricEvent event, long n) {
         counters[event.ordinal()].add(n);
         return this;

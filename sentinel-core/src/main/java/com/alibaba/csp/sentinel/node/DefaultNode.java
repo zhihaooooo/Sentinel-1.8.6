@@ -26,21 +26,24 @@ import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
 import com.alibaba.csp.sentinel.slots.nodeselector.NodeSelectorSlot;
 
 /**
- * <p>1、调用树上的资源节点类型都是 DefaultNode </p>
- * <p>2、DefaultNode 用来存储 指定资源 在 指定的 context 的指标统计结果，这样做的目的是，实现可按不同调用链入口对资源采取不同的流量控制策略</p>
- * <p>3、在同一个 context 调用多次 {@link SphU}#entry() 或 {@link SphO}@entry() 将会生成多个 DefaultNode，多个子 Node 将被放到 {@link DefaultNode#childList}</p>
+ * <p>1、整个应用的所有调用链构成了一个调用树，调用树上的资源节点类型都是 DefaultNode </p>
+ * <p>2、从调用树的根节点出发，到每个叶子节点的路径都是一条调用链，而每条调用用链除根节点外，都可能有相同的入口节点（非资源入口节点和资源入口节点）。DefaultNode 实例用于统计同一资源、不同调用链入口的实时指标数据。</p>
+ * <p>3、DefaultNode 用来存储 指定资源 在 指定的 context 的指标统计结果，这样做的目的是，实现可按不同调用链入口对资源采取不同的流量控制策略</p>
+ * <p>4、在同一个 context 调用多次 {@link SphU}#entry() 或 {@link SphO}@entry() 将会生成多个 DefaultNode，多个子 Node 将被放到 {@link DefaultNode#childList}</p>
  *
  * @author qinan.qn
  * @see NodeSelectorSlot
  */
 public class DefaultNode extends StatisticNode {
 
-    // todo 资源 和 DefaultNode 的关系 ？？？ 同一个 context 内 一个资源被访问多次，只会有一个 DefaultNode
+    
     private ResourceWrapper id;
 
+    // 存放子节点 和 构造调用树
     private volatile Set<Node> childList = new HashSet<>();
 
-    // todo 委托模式：ClusterNode 被 ClusterBuilderSlot 委托给 DefaultNode 统计指标数据
+    // 引用当前资源的全局唯一 ClusterNode 实例 
+    // 委托模式：ClusterNode 被 ClusterBuilderSlot 委托给 DefaultNode 统计指标数据
     private ClusterNode clusterNode;
 
     public DefaultNode(ResourceWrapper id, ClusterNode clusterNode) {

@@ -88,20 +88,18 @@ public class StatisticNode implements Node {
 
     /**
      * 秒级滑动窗口，用于统计实时的指标数据
-     *  The {@code INTERVAL} is divided into time spans by given {@code sampleCount}.
+     * 每个 bucket 占用 （IntervalProperty.INTERVAL / SampleCountProperty.SAMPLE_COUNT）秒，共 SampleCountProperty.SAMPLE_COUNT 个bucket
      */
     private transient volatile Metric rollingCounterInSecond = new ArrayMetric(SampleCountProperty.SAMPLE_COUNT, IntervalProperty.INTERVAL);
 
     /**
      * 分钟级滑动窗口，用于保存近一分钟内的历史指标数据，但是它的数据并不是从秒级滑动窗口来的。
-     * Holds statistics of the recent 60 seconds. The windowLengthInMs is deliberately set to 1000 milliseconds,
-     * meaning each bucket per second, in this way we can get accurate statistics of each second.
+     * 每个 bucket 占用一秒，共60个 bucket，所以我们可以拿到每秒的统计结果
      */
     private transient Metric rollingCounterInMinute = new ArrayMetric(60, 60 * 1000, false);
 
     /**
      * 并行占用线程计数器，用于统计实时占用的线程数
-     * The counter for thread count.
      */
     private LongAdder curThreadNum = new LongAdder();
 

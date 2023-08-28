@@ -24,8 +24,8 @@ import com.alibaba.csp.sentinel.node.Node;
 import com.alibaba.csp.sentinel.slots.nodeselector.NodeSelectorSlot;
 
 /**
- * This class holds metadata of current invocation:<br/>
- * <p>1、本类中持有当前调用的部分元数据：
+ * <p>1、Context 即调用链上下文，贯穿整条调用链（更精确的说是整个 request，因为一个 request 有可能会涉及多个调用链）</p>
+ * <p>2、Context 中持有当前调用的部分元数据：
  * <ul>
  * <li>{@link Context#entranceNode}，EntranceNode 类型，调用树的 root。</li>
  * <li>{@link Context#curEntry}，当前 {@link Entry}。</li>
@@ -34,8 +34,8 @@ import com.alibaba.csp.sentinel.slots.nodeselector.NodeSelectorSlot;
  * </p>
  *
  *
- * <p>2、同一个资源在不同的 context 中的 统计结果是 分开计算的</p>
- * <p>3、在同一个 context 中多次调用 SphU#entry() 将会生成多个 Entry， 这些 Entry 的父子关系都在调用树上维护，
+ * <p>3、同一个资源在不同的 context 中的 统计结果是 分开计算的</p>
+ * <p>4、在同一个 context 中多次调用 SphU#entry() 将会生成多个 Entry， 这些 Entry 的父子关系都在 curEntry(CtEntry类型) 维护，
  * context 总是持有当前 Entry，所以每次调用 {@link Entry#exit()}，都会进而调用 {@link Context#setCurEntry(Entry)} 更新 context 持有的当前 Entry</p>
  *
  * @author jialiang.linjl
@@ -52,6 +52,7 @@ public class Context {
     /** 当前调用树的入口节点 */
     private DefaultNode entranceNode;
 
+    // 引用了当前资源的 DefaultNode，以及资源相对当前来源的 StatisticNode
     private Entry curEntry;
 
     private String origin = "";

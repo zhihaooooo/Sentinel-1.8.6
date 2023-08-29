@@ -50,33 +50,26 @@ import com.alibaba.csp.sentinel.spi.Spi;
 public class ClusterBuilderSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 
     /**
-     * <p>
-     * Remember that same resource({@link ResourceWrapper#equals(Object)}) will share
-     * the same {@link ProcessorSlotChain} globally, no matter in which context. So if
-     * code goes into {@link #entry(Context, ResourceWrapper, DefaultNode, int, boolean, Object...)},
-     * the resource name must be same but context name may not.
-     * </p>
-     * <p>
-     * To get total statistics of the same resource in different context, same resource
-     * shares the same {@link ClusterNode} globally. All {@link ClusterNode}s are cached
-     * in this map.
-     * </p>
-     * <p>
-     * The longer the application runs, the more stable this mapping will
-     * become. so we don't concurrent map but a lock. as this lock only happens
-     * at the very beginning while concurrent map will hold the lock all the time.
-     * </p>
+     * 缓存不同资源的全局唯一 ClusterNode
+     * clusterNodeMap 会随着时间越来越稳定（资源的数量是有限的），只是系统初始运行时会对 map 频繁的修改，所以这里使用了一个锁，并没有将 clusterNodeMap 声明为并发容器
      */
     private static volatile Map<ResourceWrapper, ClusterNode> clusterNodeMap = new HashMap<>();
 
+    /**
+     * 保证修改 clusterNodeMap 时的线程安全
+     */
     private static final Object lock = new Object();
 
+    /**
+     * 非静态字段，持有当前资源的 ClusterNode
+     */
     private volatile ClusterNode clusterNode = null;
 
     @Override
     public void entry(Context context, ResourceWrapper resourceWrapper, DefaultNode node, int count,
                       boolean prioritized, Object... args)
         throws Throwable {
+        // clusterNode 实例为空，表示该资源是首次被访问，所以需要给资源创建一个 clusterNode
         if (clusterNode == null) {
             synchronized (lock) {
                 if (clusterNode == null) {
@@ -90,12 +83,10 @@ public class ClusterBuilderSlot extends AbstractLinkedProcessorSlot<DefaultNode>
                 }
             }
         }
+        // 将 ClusterNode 实例赋值给 DefaultNode 实例的 clusterNode 字段
         node.setClusterNode(clusterNode);
 
-        /*
-         * if context origin is set, we should get or create a new {@link Node} of
-         * the specific origin.
-         */
+        // 如果调用来源不为空，获取当前调用来源的 StatisticNode，并且将 StatisticNode 实例赋值给 CtrEntry 实例的 originNode
         if (!"".equals(context.getOrigin())) {
             Node originNode = node.getClusterNode().getOrCreateOriginNode(context.getOrigin());
             context.getCurEntry().setOriginNode(originNode);

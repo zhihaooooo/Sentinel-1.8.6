@@ -29,6 +29,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ *
+ * <p>1、为资源的首次访问（调用链维度）创建 DefaultNode</p>
+ * <p>2、修改 Context 实例的 curNode 为 当前资源的 DefaultNode，将 DefaultNode 实例绑定到 调用树上 </p>
+ * <p>3、由于后续的其他 ProcessorSlot 在逻辑上都需要依赖 NodeSelectorSlot，所以它被放在 ProcessorSlot 链的第一个位置</p>
+ *
  * </p>
  * This class will try to build the calling traces via
  * <ol>
@@ -128,48 +133,34 @@ import java.util.Map;
 public class NodeSelectorSlot extends AbstractLinkedProcessorSlot<Object> {
 
     /**
-     * {@link DefaultNode}s of the same resource in different context.
+     * map 缓存的是 同一资源 在不同调用链入口创建的 DefaultNode。
      */
-    private volatile Map<String, DefaultNode> map = new HashMap<String, DefaultNode>(10);
+    private volatile Map<String/*调用链入口名称*/, DefaultNode> map = new HashMap<String, DefaultNode>(10);
 
     @Override
     public void entry(Context context, ResourceWrapper resourceWrapper, Object obj, int count, boolean prioritized, Object... args)
         throws Throwable {
-        /*
-         * It's interesting that we use context name rather resource name as the map key.
-         *
-         * Remember that same resource({@link ResourceWrapper#equals(Object)}) will share
-         * the same {@link ProcessorSlotChain} globally, no matter in which context. So if
-         * code goes into {@link #entry(Context, ResourceWrapper, DefaultNode, int, Object...)},
-         * the resource name must be same but context name may not.
-         *
-         * If we use {@link com.alibaba.csp.sentinel.SphU#entry(String resource)} to
-         * enter same resource in different context, using context name as map key can
-         * distinguish the same resource. In this case, multiple {@link DefaultNode}s will be created
-         * of the same resource name, for every distinct context (different context name) each.
-         *
-         * Consider another question. One resource may have multiple {@link DefaultNode},
-         * so what is the fastest way to get total statistics of the same resource?
-         * The answer is all {@link DefaultNode}s with same resource name share one
-         * {@link ClusterNode}. See {@link ClusterBuilderSlot} for detail.
-         */
+
         DefaultNode node = map.get(context.getName());
         if (node == null) {
             synchronized (this) {
                 node = map.get(context.getName());
                 if (node == null) {
+                    // 为资源创建 DefaultNode
                     node = new DefaultNode(resourceWrapper, null);
+                    // todo 将数据拷贝到新map，新map插入新数据后，再将旧map 的指针指向新map
                     HashMap<String, DefaultNode> cacheMap = new HashMap<String, DefaultNode>(map.size());
                     cacheMap.putAll(map);
                     cacheMap.put(context.getName(), node);
                     map = cacheMap;
-                    // Build invocation tree
+                    // // 将当前资源的 DefaultNode 绑定到调用树上
                     ((DefaultNode) context.getLastNode()).addChild(node);
                 }
 
             }
         }
 
+        // 替换 Context 实例的 curNode 为当前创建的 DefaultNode 实例
         context.setCurNode(node);
         fireEntry(context, resourceWrapper, node, count, prioritized, args);
     }

@@ -19,7 +19,7 @@ import com.alibaba.csp.sentinel.property.DynamicSentinelProperty;
 import com.alibaba.csp.sentinel.property.SentinelProperty;
 
 /**
- * The abstract readable data source provides basic functionality for loading and parsing config.
+ * 为 接口 ReadableDataSource 提供基础的功能
  *
  * @param <S> source data type
  * @param <T> target data type
@@ -28,9 +28,16 @@ import com.alibaba.csp.sentinel.property.SentinelProperty;
  */
 public abstract class AbstractDataSource<S, T> implements ReadableDataSource<S, T> {
 
+    /**
+     * 数据转换器，需要由子类（开发者的扩展）提供
+     */
     protected final Converter<S, T> parser;
+    
     protected final SentinelProperty<T> property;
 
+    /**
+     * 子类（开发者的扩展）必须提供 相应的数据转换工具
+     */
     public AbstractDataSource(Converter<S, T> parser) {
         if (parser == null) {
             throw new IllegalArgumentException("parser can't be null");
@@ -39,11 +46,18 @@ public abstract class AbstractDataSource<S, T> implements ReadableDataSource<S, 
         this.property = new DynamicSentinelProperty<T>();
     }
 
+    /**
+     * 1、加载配置并转换成 sentinel 中的规则类型
+     * 2、这里的 readSource() 由子类实现，由开发者决定自定义数据源的选择
+     */
     @Override
     public T loadConfig() throws Exception {
         return loadConfig(readSource());
     }
 
+    /**
+     * 由子类（开发者的扩展）提供的 转换器，convert(S conf) 方法将 类型为 S 的 实例 转换为 类型为 T 的实例
+     */
     public T loadConfig(S conf) throws Exception {
         T value = parser.convert(conf);
         return value;

@@ -19,16 +19,13 @@ import com.alibaba.csp.sentinel.slots.block.AbstractRule;
 import com.alibaba.csp.sentinel.slots.block.RuleConstant;
 
 /**
- * <p>
- * Each flow rule is mainly composed of three factors: <strong>grade</strong>,
- * <strong>strategy</strong> and <strong>controlBehavior</strong>:
- * </p>
+ * <p> FlowRule 包含的的三个限流因素：
  * <ul>
- *     <li>The {@link #grade} represents the threshold type of flow control (by QPS or thread count).</li>
- *     <li>The {@link #strategy} represents the strategy based on invocation relation.</li>
- *     <li>The {@link #controlBehavior} represents the QPS shaping behavior (actions on incoming request when QPS
- *     exceeds the threshold).</li>
+ *      <li>The {@link #grade} ：限流的阈值类型</li>
+ *      <li>The {@link #strategy} ：基于调用关系的策略</li>
+ *      <li>The {@link #controlBehavior} ：QPS 限流的行为控制器，QPS超过阈值时对传入请求的操作</li>
  * </ul>
+ * </p>
  *
  * @author jialiang.linjl
  * @author Eric Zhao
@@ -47,17 +44,18 @@ public class FlowRule extends AbstractRule {
     }
 
     /**
-     * The threshold type of flow control (0: thread count, 1: QPS).
+     * 限流阈值类型
+     *
+     * {@link RuleConstant#FLOW_GRADE_THREAD} : 线程数
+     * {@link RuleConstant#FLOW_GRADE_QPS} ： QPS
      */
     private int grade = RuleConstant.FLOW_GRADE_QPS;
 
-    /**
-     * Flow control threshold count.
-     */
+    // 限流阈值
     private double count;
 
     /**
-     * Flow control strategy based on invocation chain.
+     * 基于调用关系的策略
      *
      * {@link RuleConstant#STRATEGY_DIRECT} for direct flow control (by origin);
      * {@link RuleConstant#STRATEGY_RELATE} for relevant flow control (with relevant resource);
@@ -65,34 +63,37 @@ public class FlowRule extends AbstractRule {
      */
     private int strategy = RuleConstant.STRATEGY_DIRECT;
 
-    /**
-     * Reference resource in flow control with relevant resource or context.
-     */
+    // 引用的资源，仅在配置了 strategy 的情况下使用
     private String refResource;
 
     /**
-     * Rate limiter control behavior.
-     * 0. default(reject directly), 1. warm up, 2. rate limiter, 3. warm up + rate limiter
+     * QPS 限流的行为控制器
+     *
+     * {@link RuleConstant#CONTROL_BEHAVIOR_DEFAULT} ：默认，直接拒绝
+     * {@link RuleConstant#CONTROL_BEHAVIOR_WARM_UP} ：冷启动
+     * {@link RuleConstant#CONTROL_BEHAVIOR_RATE_LIMITER} ： 匀速排队
+     * {@link RuleConstant#CONTROL_BEHAVIOR_WARM_UP_RATE_LIMITER} ： 冷启动 + 匀速排队
      */
     private int controlBehavior = RuleConstant.CONTROL_BEHAVIOR_DEFAULT;
 
+    // 冷启动时长，单位秒
     private int warmUpPeriodSec = 10;
 
-    /**
-     * Max queueing time in rate limiter behavior.
-     */
+    // 最大排队等待时间，单位毫秒
     private int maxQueueingTimeMs = 500;
 
+    // 是否集群限流模式
     private boolean clusterMode;
-    /**
-     * Flow rule config for cluster mode.
-     */
+    
+    // 集群模式限流规则配置
     private ClusterFlowConfig clusterConfig;
 
-    /**
-     * The traffic shaping (throttling) controller.
-     */
+    // QPS 限流的行为控制器 具体实现
     private TrafficShapingController controller;
+
+
+
+
 
     public int getControlBehavior() {
         return controlBehavior;

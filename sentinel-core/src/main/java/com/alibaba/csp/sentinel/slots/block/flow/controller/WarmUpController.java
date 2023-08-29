@@ -22,54 +22,44 @@ import com.alibaba.csp.sentinel.node.Node;
 import com.alibaba.csp.sentinel.slots.block.flow.TrafficShapingController;
 
 /**
+ * <p>令牌桶算法</p>
+ *
  * <p>
- * The principle idea comes from Guava. However, the calculation of Guava is
- * rate-based, which means that we need to translate rate to QPS.
+ * Sentinel的“预热”实现是基于Guava的算法。
+ * 然而Guava的实现侧重于调整请求间隔，类似于漏桶。
+ * Sentinel更加关注于控制每秒传入请求的计数而不计算其间隔，类似于令牌桶算法
  * </p>
  *
  * <p>
- * Requests arriving at the pulse may drag down long idle systems even though it
- * has a much larger handling capability in stable period. It usually happens in
- * scenarios that require extra time for initialization, e.g. DB establishes a connection,
- * connects to a remote service, and so on. That’s why we need “warm up”.
+ * 存储桶中剩余的令牌用于测量系统效用。
+ * 假设一个系统每秒可以处理b个请求。每秒钟b个令牌将添加到桶中，直到桶装满为止。
+ * 当系统处理一个请求，它从桶中获取一个令牌。桶中剩余的令牌越少，系统的利用率越低；当令牌中的令牌数量高于某个阈值，我们称之为“饱和”状态
  * </p>
  *
  * <p>
- * Sentinel's "warm-up" implementation is based on the Guava's algorithm.
- * However, Guava’s implementation focuses on adjusting the request interval,
- * which is similar to leaky bucket. Sentinel pays more attention to
- * controlling the count of incoming requests per second without calculating its interval,
- * which resembles token bucket algorithm.
+ * 基于Guava的理论，有一个线性方程，y=m*x+b，其中y（也称为y（x））或qps（q））是我们期望的qps
+ * *给定饱和周期（例如3分钟），m是从我们的冷（最小）速率到我们的稳定（最大）速率，x（或q）是已占用令牌。
  * </p>
  *
- * <p>
- * The remaining tokens in the bucket is used to measure the system utility.
- * Suppose a system can handle b requests per second. Every second b tokens will
- * be added into the bucket until the bucket is full. And when system processes
- * a request, it takes a token from the bucket. The more tokens left in the
- * bucket, the lower the utilization of the system; when the token in the token
- * bucket is above a certain threshold, we call it in a "saturation" state.
- * </p>
- *
- * <p>
- * Base on Guava’s theory, there is a linear equation we can write this in the
- * form y = m * x + b where y (a.k.a y(x)), or qps(q)), is our expected QPS
- * given a saturated period (e.g. 3 minutes in), m is the rate of change from
- * our cold (minimum) rate to our stable (maximum) rate, x (or q) is the
- * occupied token.
- * </p>
+ * <p>前提是 限流阈值类型必须为 QPS </p>
  *
  * @author jialiang.linjl
  */
 public class WarmUpController implements TrafficShapingController {
 
+    // 限流阈值（QPS）
     protected double count;
+    // 冷启动系数
     private int coldFactor;
+    // 在稳定的令牌生产速率下，令牌桶中存储的令牌数
     protected int warningToken = 0;
+    // 令牌桶的最大容量
     private int maxToken;
+    // 斜率，每秒放行请求数的增长速率
     protected double slope;
-
+    // 令牌桶当前存储的令牌数
     protected AtomicLong storedTokens = new AtomicLong(0);
+    // 上一次生产令牌的时间
     protected AtomicLong lastFilledTime = new AtomicLong(0);
 
     public WarmUpController(double count, int warmUpPeriodInSec, int coldFactor) {
@@ -112,23 +102,28 @@ public class WarmUpController implements TrafficShapingController {
 
     @Override
     public boolean canPass(Node node, int acquireCount, boolean prioritized) {
+        // 当前时间窗口通过的 QPS
         long passQps = (long) node.passQps();
 
+        // 前一个时间窗口通过的 QPS
         long previousQps = (long) node.previousPassQps();
         syncToken(previousQps);
 
         // 开始计算它的斜率
-        // 如果进入了警戒线，开始调整他的qps
-        long restToken = storedTokens.get();
+        // 如果令牌桶中存放的令牌桶数量超过了警戒线，则进入到冷启动阶段，开始调整 QPS
+        long restToken = storedTokens.get();// 当前令牌桶中的令牌数
         if (restToken >= warningToken) {
             long aboveToken = restToken - warningToken;
             // 消耗的速度要比warning快，但是要比慢
             // current interval = restToken*slope+1/count
             double warningQps = Math.nextUp(1.0 / (aboveToken * slope + 1.0 / count));
+            // 小于 warningQps 才放行
             if (passQps + acquireCount <= warningQps) {
                 return true;
             }
         } else {
+            // 未超过警戒线的情况下按正常限流，如果放行当前请求之后会导致通过的 QPS 超过阈值，则拦截当前请求。
+            // 否则放行
             if (passQps + acquireCount <= count) {
                 return true;
             }
@@ -141,14 +136,17 @@ public class WarmUpController implements TrafficShapingController {
         long currentTime = TimeUtil.currentTimeMillis();
         currentTime = currentTime - currentTime % 1000;
         long oldLastFillTime = lastFilledTime.get();
+        // 控制每秒只更新一次
         if (currentTime <= oldLastFillTime) {
             return;
         }
 
         long oldValue = storedTokens.get();
+        // 计算新的令牌桶中的令牌数
         long newValue = coolDownTokens(currentTime, passQps);
 
         if (storedTokens.compareAndSet(oldValue, newValue)) {
+            // storedTokens 扣减上个时间窗口的 QPS
             long currentValue = storedTokens.addAndGet(0 - passQps);
             if (currentValue < 0) {
                 storedTokens.set(0L);
